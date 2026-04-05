@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Familjespelet - 7 Svar</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #e0e5ec;
+            color: #333;
+        }
+        #game-container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        #category { 
+            font-weight: bold; 
+            color: #8e44ad; 
+            text-transform: uppercase; 
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        #question { 
+            font-size: 1.8rem; 
+            margin: 20px 0; 
+            min-height: 80px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #timer { 
+            font-size: 4rem; 
+            font-weight: bold; 
+            margin: 20px 0; 
+            color: #e74c3c;
+            font-variant-numeric: tabular-nums;
+        }
+        #answers { 
+            text-align: left; 
+            display: none; 
+            background: #fdfbfb;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border: 2px solid #eee;
+        }
+        ol { 
+            padding-left: 25px; 
+            margin: 10px 0 0 0;
+        }
+        li { 
+            margin-bottom: 10px; 
+            font-size: 1.2rem; 
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        li:last-child {
+            border-bottom: none;
+        }
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        button {
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+            color: white;
+        }
+        button:active { transform: scale(0.95); }
+        #next-btn { background-color: #2ecc71; }
+        #next-btn:hover { background-color: #27ae60; }
+        #show-btn { background-color: #3498db; display: none; }
+        #show-btn:hover { background-color: #2980b9; }
+        #counter {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="category">Välkommen</div>
+    <div id="question">Tryck på Starta för att dra det första kortet.</div>
+    <div id="timer">45</div>
+    
+    <div id="answers">
+        <strong style="font-size: 1.2rem; color: #2c3e50;">Kortets svar:</strong>
+        <ol id="answer-list"></ol>
+    </div>
+
+    <div class="btn-container">
+        <button id="show-btn" onclick="showAnswersManually()">Visa svar</button>
+        <button id="next-btn" onclick="nextCard()">Starta spelet</button>
+    </div>
+
+    <div id="counter">Spelade kort: 0 / 100</div>
+</div>
+
+<script>
+    const allCards = [
+        { cat: "Grönsaker", q: "Grönsaker som är gröna", a: ["Gurka", "Sallad", "Broccoli", "Spenat", "Ärtor", "Zucchini", "Paprika"] },
+        { cat: "Pizza", q: "Saker på en pizza", a: ["Ost", "Tomatsås", "Skinka", "Champinjoner", "Kebab", "Ananas", "Lök"] },
+        { cat: "Frukt", q: "Frukter som är gula", a: ["Banan", "Citron", "Mango", "Ananas", "Gula äpplen", "Melon", "Stjärnfrukt"] },
+        { cat: "Frukost", q: "Saker man dricker till frukost", a: ["Mjölk", "Vatten", "Apelsinjuice", "Äppeljuice", "Kaffe", "Te", "O'boy"] },
+        { cat: "Bröd", q: "Brödsorter", a: ["Knäckebröd", "Rostat bröd", "Limpa", "Frallor", "Baguette", "Tunnbröd", "Rågbröd"] },
+        { cat: "Grillat", q: "Saker man kan grilla", a: ["Korv", "Hamburgare", "Kyckling", "Majskolv", "Marshmallows", "Halloumi", "Köttbit"] },
+        { cat: "Tacos", q: "Saker i en tacobuffé", a: ["Köttfärs", "Majs", "Gräddfil", "Salsa", "Gurka", "Ost", "Jappa Leno"] },
+        { cat: "Pasta", q: "Sorter av pasta", a: ["Makaroner", "Spaghetti", "Skruvar", "Fjärilar", "Lasagne", "Penne", "Tagliatelle"] },
+        { cat: "Fika", q: "Saker man bakar", a: ["Kanelbullar", "Chokladbollar", "Sockerkaka", "Pannkakor", "Pepparkakor", "Muffins", "Tårta"] },
+        { cat: "Bär", q: "Bär i skogen eller trädgården", a: ["Blåbär", "Lingon", "Hallon", "Smultron", "Jordgubbar", "Björnbär", "Krusbär"] },
+        { cat: "Havet", q: "Djur i havet", a: ["Val", "Haj", "Delfin", "Bläckfisk", "Säl", "Havssköldpadda", "Krabba"] },
+        { cat: "Skogen", q: "Djur i svenska skogen", a: ["Älg", "Björn", "Räv", "Hare", "Varg", "Rådjur", "Ekorre"] },
+        { cat: "Savannen", q: "Djur på savannen eller i djungeln", a: ["Lejon", "Apa", "Elefant", "Giraff", "Zebra", "Flodhäst", "Noshörning"] },
+        { cat: "Fåglar", q: "Vanliga fåglar", a: ["Skata", "Kråka", "Domherre", "Örn", "Uggla", "Svan", "Anka"] },
+        { cat: "Insekter", q: "Småkryp", a: ["Myra", "Spindel", "Fluga", "Mygga", "Nyckelpiga", "Geting", "Fjäril"] },
+        { cat: "Husdjur", q: "Husdjur man kan ha hemma", a: ["Hund", "Katt", "Kanin", "Marsvin", "Hamster", "Undulat", "Guldfisk"] },
+        { cat: "Djur", q: "Djur som rör sig långsamt", a: ["Snigel", "Sköldpadda", "Sengångare", "Sjöhäst", "Mussla", "Mask", "Snäcka"] },
+        { cat: "Djur", q: "Djur som har horn", a: ["Ko", "Älg", "Ren", "Get", "Noshörning", "Vädur", "Antilop"] },
+        { cat: "Hundar", q: "Hundraser", a: ["Golden Retriever", "Tax", "Schäfer", "Pudel", "Chihuahua", "Mops", "Labrador"] },
+        { cat: "Djur", q: "Djur som kan hoppa", a: ["Känguru", "Groda", "Hare", "Gräshoppa", "Loppa", "Kanin", "Delfin"] },
+        { cat: "Köket", q: "Saker i ett kök", a: ["Kylskåp", "Spis", "Diskmaskin", "Mikrovågsugn", "Vattenkokare", "Kaffebryggare", "Brödrost"] },
+        { cat: "Badrummet", q: "Saker i ett badrum", a: ["Toalett", "Dusch", "Badkar", "Handfat", "Spegel", "Handduk", "Tandborste"] },
+        { cat: "Sovrummet", q: "Saker man sover med eller i", a: ["Säng", "Täcke", "Kudde", "Lakan", "Pyjamas", "Gosedjur", "Nattlinne"] },
+        { cat: "Vinter", q: "Kläder för vintern", a: ["Dunjacka", "Täckbyxor", "Mössa", "Vantar", "Halsduk", "Ullstrumpor", "Kängor"] },
+        { cat: "Sommar", q: "Kläder för sommaren", a: ["Shorts", "T-shirt", "Keps", "Solglasögon", "Baddräkt", "Badbyxor", "Sandaler"] },
+        { cat: "Fötter", q: "Saker man har på fötterna", a: ["Skor", "Strumpor", "Stövlar", "Tofflor", "Sandaler", "Skridskor", "Rullskridskor"] },
+        { cat: "Hallen", q: "Saker i en hall", a: ["Skohylla", "Jacka", "Paraply", "Dörrmatta", "Spegel", "Skohorn", "Nycklar"] },
+        { cat: "Verktyg", q: "Saker i en verktygslåda", a: ["Hammare", "Skruvmejsel", "Tång", "Tumstock", "Såg", "Vattenpass", "Skruvar"] },
+        { cat: "Städning", q: "Saker man städar med", a: ["Dammsugare", "Mopp", "Sopborste", "Dammvippa", "Trasa", "Rengöringsmedel", "Svamp"] },
+        { cat: "Kontor", q: "Saker på ett skrivbord", a: ["Dator", "Penna", "Papper", "Lampa", "Suddgummi", "Sax", "Tejp"] },
+        { cat: "Fordon", q: "Saker med hjul", a: ["Bil", "Cykel", "Buss", "Tåg", "Skateboard", "Rullstol", "Barnvagn"] },
+        { cat: "Luften", q: "Saker som flyger", a: ["Flygplan", "Helikopter", "Luftballong", "Fågel", "Raket", "Drönare", "Fjäril"] },
+        { cat: "Lekplats", q: "Saker på en lekplats", a: ["Gunga", "Rutschkana", "Sandlåda", "Klätterställning", "Gungbräda", "Karusell", "Bänk"] },
+        { cat: "Staden", q: "Platser i en stad", a: ["Sjukhus", "Skola", "Polisstation", "Mataffär", "Bibliotek", "Biograf", "Park"] },
+        { cat: "Geografi", q: "Länder i Europa", a: ["Sverige", "Norge", "Danmark", "Finland", "Tyskland", "Frankrike", "Spanien"] },
+        { cat: "Tåg", q: "Saker på en tågstation", a: ["Tåg", "Räls", "Biljettautomat", "Passagerare", "Konduktör", "Bänkar", "Tidtabell"] },
+        { cat: "Flyg", q: "Saker på en flygplats", a: ["Flygplan", "Rullväska", "Pass", "Pilot", "Flygvärdinna", "Säkerhetskontroll", "Gate"] },
+        { cat: "Bondgård", q: "Fordon och maskiner på en bondgård", a: ["Traktor", "Skördetröska", "Fyrhjuling", "Släp", "Skottkärra", "Flakmoped", "Grävmaskin"] },
+        { cat: "Räddning", q: "Utryckningsfordon", a: ["Polisbil", "Ambulans", "Brandbil", "Bärgningsbil", "Sjöräddning", "Räddningshelikopter", "Tullbil"] },
+        { cat: "Semester", q: "Saker man gör på semestern", a: ["Badar", "Solar", "Äter glass", "Bor på hotell", "Åker flygplan", "Bygger sandslott", "Vilar"] },
+        { cat: "Kroppen", q: "Kroppsdelar man har två av", a: ["Ögon", "Öron", "Armar", "Ben", "Händer", "Fötter", "Knän"] },
+        { cat: "Munnen", q: "Saker man gör med munnen", a: ["Pratar", "Äter", "Sjunger", "Skrattar", "Gäspar", "Blåser", "Visslar"] },
+        { cat: "Färger", q: "Vanliga färger", a: ["Röd", "Blå", "Grön", "Gul", "Svart", "Vit", "Rosa"] },
+        { cat: "Rött", q: "Saker som är röda", a: ["Tomat", "Blod", "Brandbil", "Jordgubbe", "Stoppskylt", "Hjärta", "Nyckelpiga"] },
+        { cat: "Blått", q: "Saker som är blå", a: ["Himmel", "Havet", "Blåbär", "Smurfar", "Jeans", "Vatten", "Polisskylt"] },
+        { cat: "Former", q: "Geometriska former", a: ["Cirkel", "Kvadrat", "Triangel", "Rektangel", "Stjärna", "Hjärta", "Oval"] },
+        { cat: "Lukt", q: "Saker man kan känna doften av", a: ["Blommor", "Mat", "Parfym", "Rök", "Sopor", "Nybakt bröd", "Regn"] },
+        { cat: "Ljud", q: "Saker man kan höra", a: ["Musik", "Prat", "Bilar", "Hundskall", "Fågelkvitter", "Vinden", "Klockor"] },
+        { cat: "Syn", q: "Saker man använder för att se bättre", a: ["Glasögon", "Kikare", "Förstoringsglas", "Mikroskop", "Teleskop", "Kontaktlinser", "Solglasögon"] },
+        { cat: "Känslor", q: "Olika känslor", a: ["Glad", "Ledsen", "Arg", "Rädd", "Överraskad", "Trött", "Nervös"] },
+        { cat: "Himlen", q: "Saker på himlen", a: ["Solen", "Månen", "Stjärnor", "Moln", "Regnbåge", "Flygplan", "Fåglar"] },
+        { cat: "Rymden", q: "Saker i rymden", a: ["Planeter", "Astronauter", "Raketer", "Satelliter", "Svarta hål", "Kometer", "Meteoriter"] },
+        { cat: "Väder", q: "Olika väder", a: ["Soligt", "Regnigt", "Molnigt", "Snöigt", "Åska", "Blåsigt", "Hagel"] },
+        { cat: "Skogen", q: "Saker i skogen", a: ["Träd", "Stenar", "Mossa", "Stubbar", "Grenar", "Barr", "Kottar"] },
+        { cat: "Stranden", q: "Saker på en strand", a: ["Sand", "Vatten", "Snäckor", "Tång", "Solstolar", "Parasoll", "Sandslott"] },
+        { cat: "Träd", q: "Trädarter", a: ["Björk", "Tall", "Gran", "Ek", "Lönn", "Rönn", "Kastanj"] },
+        { cat: "Blommor", q: "Blomsorter", a: ["Ros", "Tulpan", "Maskros", "Blåklocka", "Vitsippa", "Solros", "Lilja"] },
+        { cat: "Kalender", q: "Årstider och månader", a: ["Vår", "Sommar", "Höst", "Vinter", "Januari", "Maj", "December"] },
+        { cat: "Värme", q: "Saker som är varma", a: ["Solen", "Eld", "Element", "Kaffe", "Te", "Bastu", "Kamin"] },
+        { cat: "Kyla", q: "Saker som är kalla", a: ["Is", "Snö", "Glass", "Kylskåp", "Frysen", "Nordpolen", "Isvatten"] },
+        { cat: "Skola", q: "Saker i ett klassrum", a: ["Bänkar", "Stolar", "Whiteboard", "Pennor", "Böcker", "Lärare", "Suddgummi"] },
+        { cat: "Ämnen", q: "Skolämnen", a: ["Matematik", "Svenska", "Engelska", "Idrott", "Musik", "Bild", "Historia"] },
+        { cat: "Bollsport", q: "Sporter med boll", a: ["Fotboll", "Basket", "Handboll", "Tennis", "Innebandy", "Golf", "Volleyboll"] },
+        { cat: "Vinter", q: "Vintersport", a: ["Längdskidor", "Slalom", "Skridskor", "Ishockey", "Snowboard", "Pulka", "Konståkning"] },
+        { cat: "Musik", q: "Instrument", a: ["Gitarr", "Piano", "Trummor", "Fiol", "Flöjt", "Bas", "Trumpet"] },
+        { cat: "Leksaker", q: "Vanliga leksaker", a: ["Lego", "Dockor", "Bilar", "Pussel", "Gosedjur", "Byggklossar", "Bollar"] },
+        { cat: "Spel", q: "Spel man spelar med familjen", a: ["Monopol", "Uno", "Yatzy", "Fia med knuff", "Schack", "Domino", "Kortspel"] },
+        { cat: "Idrott", q: "Saker man gör på gymnastiken", a: ["Springer", "Hoppar", "Kullerbytta", "Spelar boll", "Klättrar", "Stretchar", "Leker kull"] },
+        { cat: "Bygga", q: "Saker man kan bygga med", a: ["Lego", "Duplo", "Klossar", "Sand", "Snö", "Lera", "Plus-plus"] },
+        { cat: "Läsning", q: "Saker man läser", a: ["Böcker", "Tidningar", "Serietidningar", "Skyltar", "Recept", "SMS", "Menyer"] },
+        { cat: "Disney", q: "Figurer från filmer", a: ["Musse Pigg", "Kalle Anka", "Elsa", "Anna", "Olaf", "Blixten McQueen", "Ariel"] },
+        { cat: "Sagor", q: "Sagoväsen", a: ["Troll", "Häxa", "Drake", "Enhörning", "Sjöjungfru", "Alv", "Tomte"] },
+        { cat: "Hjältar", q: "Superhjältar", a: ["Spiderman", "Batman", "Superman", "Wonder Woman", "Hulken", "Iron Man", "Blixten"] },
+        { cat: "Slottet", q: "Saker en kunglighet har", a: ["Krona", "Slott", "Klänning", "Tron", "Häst", "Prins", "Tjänare"] },
+        { cat: "TV", q: "Barnprogram", a: ["Bolibompa", "Paw Patrol", "Bamse", "Pippi Långstrump", "Bluey", "Sommarskuggan", "Greta Gris"] },
+        { cat: "Astrid", q: "Kända figurer", a: ["Pippi", "Emil", "Ida", "Ronja", "Karlsson", "Madicken", "Nils Karlsson Pyssling"] },
+        { cat: "Bio", q: "Saker på bio", a: ["Popcorn", "Filmduk", "Stolar", "Godis", "Läsk", "Biljetter", "Mörker"] },
+        { cat: "TV-spel", q: "Kända spel", a: ["Minecraft", "Roblox", "Fortnite", "Super Mario", "Pokémon", "FIFA", "Zelda"] },
+        { cat: "Rita", q: "Saker man behöver för att rita", a: ["Papper", "Blyertspenna", "Färgpennor", "Suddgummi", "Pennvässare", "Krita", "Linjal"] },
+        { cat: "Fest", q: "Saker man firar", a: ["Födelsedag", "Julafton", "Midsommar", "Påsk", "Nyår", "Halloween", "Nationaldagen"] },
+        { cat: "Yrken", q: "Olika jobb", a: ["Polis", "Brandman", "Läkare", "Lärare", "Busschaufför", "Frisör", "Snickare"] },
+        { cat: "Familj", q: "Människor i en familj", a: ["Mamma", "Pappa", "Bror", "Syster", "Mormor", "Morfar", "Kusin"] },
+        { cat: "Polis", q: "Saker en polis använder", a: ["Polisbil", "Uniform", "Handklovar", "Radio", "Batong", "Ficklampa", "Reflexväst"] },
+        { cat: "Läkare", q: "Saker en läkare använder", a: ["Stetoskop", "Spruta", "Plåster", "Vit rock", "Termometer", "Recept", "Bandage"] },
+        { cat: "Snickare", q: "Saker en snickare använder", a: ["Hammare", "Spik", "Såg", "Träbrädor", "Tumstock", "Borrmaskin", "Skruvar"] },
+        { cat: "Kock", q: "Saker en kock använder", a: ["Kastrull", "Stekpanna", "Kniv", "Skärbräda", "Förkläde", "Slev", "Visp"] },
+        { cat: "Frisör", q: "Saker en frisör använder", a: ["Sax", "Kam", "Hårfön", "Hårspray", "Spegel", "Schampo", "Hårtrimmer"] },
+        { cat: "Brandman", q: "Saker en brandman använder", a: ["Brandbil", "Vattenslang", "Stege", "Hjälm", "Yxa", "Syrgastub", "Brandsläckare"] },
+        { cat: "Bebisar", q: "Andra ord för bebis", a: ["Spädbarn", "Nyfödd", "Småbarn", "Bäbis", "Bebbe", "Knodd", "Pyre"] },
+        { cat: "Bebis", q: "Saker en bebis behöver", a: ["Blöja", "Napp", "Nappflaska", "Barnvagn", "Spjälsäng", "Skallra", "Haklapp"] },
+        { cat: "Kväll", q: "Saker man gör innan sängdags", a: ["Borstar tänderna", "Byter till pyjamas", "Läser saga", "Går på toa", "Släcker lampan", "Kramas", "Dricker vatten"] },
+        { cat: "Öppna", q: "Saker man kan öppna", a: ["Dörr", "Fönster", "Bok", "Burk", "Flaska", "Present", "Ögonen"] },
+        { cat: "Stänga", q: "Saker man kan stänga", a: ["Dörr", "Kylskåp", "Dragkedja", "Dator", "Munnen", "Ögonen", "Bok"] },
+        { cat: "Smälta", q: "Saker som smälter", a: ["Glass", "Snö", "Is", "Smör", "Choklad", "Ost", "Stearin"] },
+        { cat: "Tappa", q: "Saker man kan tappa", a: ["Saker i golvet", "Tänder", "Hår", "Nycklar", "Tålamodet", "Farten", "Minnet"] },
+        { cat: "Gå sönder", q: "Saker som kan gå sönder", a: ["Glas", "Tallrikar", "Fönster", "Leksaker", "Ägg", "Papper", "Elektronik"] },
+        { cat: "Tvätta", q: "Saker man tvättar", a: ["Händerna", "Håret", "Kläder", "Bilen", "Golvet", "Fönster", "Disken"] },
+        { cat: "Hänga", q: "Saker man hänger upp", a: ["Jackor", "Tvätt", "Tavlor", "Julgranskulor", "Lampor", "Gardiner", "Handdukar"] },
+        { cat: "Fickan", q: "Saker man kan ha i fickan", a: ["Telefon", "Nycklar", "Plånbok", "Mynt", "Kvitto", "Näsduk", "Händerna"] },
+        { cat: "Morgon", q: "Saker man gör på morgonen", a: ["Kliver upp", "Kläder på", "Äter frukost", "Borstar tänderna", "Går till skolan", "Kammar håret", "Tvättar ansiktet"] }
+    ];
+
+    let currentCards = [];
+    let currentCardIndex = 0;
+    let timer;
+    let timeLeft = 45;
+
+    function shuffleArray(array) {
+        let newArr = [...array];
+        for (let i = newArr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
+        }
+        return newArr;
+    }
+
+    function initGame() {
+        currentCards = shuffleArray(allCards);
+        currentCardIndex = 0;
+    }
+
+    function nextCard() {
+        if (currentCards.length === 0) {
+            initGame();
+        }
+
+        if (currentCardIndex >= currentCards.length) {
+            alert("Nu har ni spelat igenom alla 100 kort! Korten blandas nu om för en ny spelrunda.");
+            initGame();
+        }
+
+        clearInterval(timer);
+        
+        const card = currentCards[currentCardIndex];
+        
+        document.getElementById('category').innerText = card.cat;
+        document.getElementById('question').innerText = card.q;
+        
+        document.getElementById('answers').style.display = 'none';
+        document.getElementById('next-btn').innerText = 'Nästa kort';
+        document.getElementById('show-btn').style.display = 'inline-block';
+        
+        document.getElementById('counter').innerText = `Spelade kort: ${currentCardIndex + 1} / ${currentCards.length}`;
+
+        const list = document.getElementById('answer-list');
+        list.innerHTML = "";
+        card.a.forEach(item => {
+            let li = document.createElement('li');
+            li.innerText = item;
+            list.appendChild(li);
+        });
+
+        currentCardIndex++;
+        startTimer();
+    }
+
+    function startTimer() {
+        timeLeft = 45;
+        document.getElementById('timer').innerText = timeLeft;
+        document.getElementById('timer').style.color = "#e74c3c";
+
+        timer = setInterval(() => {
+            timeLeft--;
+            document.getElementById('timer').innerText = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                triggerAnswers();
+            }
+        }, 1000);
+    }
+
+    function showAnswersManually() {
+        clearInterval(timer);
+        triggerAnswers();
+    }
+
+    function triggerAnswers() {
+        document.getElementById('answers').style.display = 'block';
+        document.getElementById('timer').innerText = "TIDEN ÄR UTE";
+        document.getElementById('timer').style.color = "#2c3e50";
+        document.getElementById('show-btn').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
