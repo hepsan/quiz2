@@ -25,6 +25,26 @@
             max-width: 600px;
             max-height: 90vh;
             overflow-y: auto;
+            position: relative;
+        }
+        #tricky-banner {
+            background-color: #f39c12;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(243, 156, 18, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
         #category { 
             font-weight: bold; 
@@ -36,7 +56,7 @@
         }
         #question { 
             font-size: 1.8rem; 
-            margin: 20px 0; 
+            margin: 10px 0 20px 0; 
             min-height: 80px; 
             display: flex;
             align-items: center;
@@ -68,9 +88,7 @@
             border-bottom: 1px solid #eee;
             padding-bottom: 5px;
         }
-        li:last-child {
-            border-bottom: none;
-        }
+        li:last-child { border-bottom: none; }
         .btn-container {
             display: flex;
             gap: 15px;
@@ -98,11 +116,13 @@
             font-size: 0.9rem;
             color: #7f8c8d;
         }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
+    <div id="tricky-banner" class="hidden">⚠️ KLURIGT KORT!</div>
     <div id="category">Välkommen</div>
     <div id="question">Tryck på Starta för att dra det första kortet.</div>
     <div id="timer">45</div>
@@ -117,11 +137,11 @@
         <button id="next-btn" onclick="nextCard()">Starta spelet</button>
     </div>
 
-    <div id="counter">Spelade kort: 0 / 100</div>
+    <div id="counter">Spelade kort: 0 / 200</div>
 </div>
 
 <script>
-    const allCards = [
+    const standardCards = [
         { cat: "Grönsaker", q: "Grönsaker som är gröna", a: ["Gurka", "Sallad", "Broccoli", "Spenat", "Ärtor", "Zucchini", "Paprika"] },
         { cat: "Pizza", q: "Saker på en pizza", a: ["Ost", "Tomatsås", "Skinka", "Champinjoner", "Kebab", "Ananas", "Lök"] },
         { cat: "Frukt", q: "Frukter som är gula", a: ["Banan", "Citron", "Mango", "Ananas", "Gula äpplen", "Melon", "Stjärnfrukt"] },
@@ -224,10 +244,105 @@
         { cat: "Morgon", q: "Saker man gör på morgonen", a: ["Kliver upp", "Kläder på", "Äter frukost", "Borstar tänderna", "Går till skolan", "Kammar håret", "Tvättar ansiktet"] }
     ];
 
+    const trickyCards = [
+        { tricky: true, cat: "Ursäkter", q: "Ursäkter för att komma för sent", a: ["Försov mig", "Bussen var sen", "Trafikstockning", "Letade efter nycklarna", "Punktering", "Glömde tiden", "Larmet ringde inte"] },
+        { tricky: true, cat: "Tvetydigt", q: "Ord som har flera helt olika betydelser", a: ["Bok", "Gift", "Tomt", "Våg", "Dam", "Fil", "Kassa"] },
+        { tricky: true, cat: "Obehag", q: "Saker man inte vill hitta i maten", a: ["Hårstrå", "Fluga", "Plåster", "Sten", "Mögel", "Mask", "Snigel"] },
+        { tricky: true, cat: "Sömn", q: "Saker kroppen kan göra när man sover", a: ["Snarkar", "Drömmer", "Pratar", "Går i sömnen", "Dreglar", "Vänder på sig", "Gnisslar tänder"] },
+        { tricky: true, cat: "Borta", q: "Saker man ofta tappar bort hemma", a: ["Fjärrkontrollen", "Nycklarna", "Mobilen", "Ena strumpan", "Glasögonen", "Plånboken", "Hårsnodden"] },
+        { tricky: true, cat: "Akustik", q: "Saker som låter fruktansvärt högt när man tappar dem", a: ["Kastruller", "Glas", "Tallrikar", "Mobilen", "Bestick", "Nyckelknippa", "Ett bowlingklot"] },
+        { tricky: true, cat: "Årligt", q: "Saker man oftast bara använder en gång om året", a: ["Julgran", "Påskris", "Midsommarstång", "Adventsljusstake", "Lucialinne", "Kräfthattar", "Deklarationen"] },
+        { tricky: true, cat: "Panik", q: "Tillfällen där 45 sekunder känns som en evighet", a: ["Väntar på mikron", "Väntar på bussen i kyla", "Står i 'Plankan'", "Telefonkö", "Håller andan under vatten", "Väntar på en ledig toa", "I detta spel"] },
+        { tricky: true, cat: "Bussen", q: "Saker man glömmer på bussen", a: ["Vantar", "Mössa", "Paraply", "Väska", "Mobiltelefon", "Plånbok", "Hörlurar"] },
+        { tricky: true, cat: "Duschen", q: "Saker man gör i duschen", a: ["Tvättar sig", "Sjunger", "Tänker", "Blundar", "Rakar sig", "Fryser när man stänger av", "Pratar med sig själv"] },
+        { tricky: true, cat: "I smyg", q: "Saker man gör när ingen ser", a: ["Pillar i näsan", "Gråter till en film", "Äter från kastrullen", "Dansar", "Pratar med sig själv", "Luktar på sina kläder", "Rättar till underkläderna"] },
+        { tricky: true, cat: "Irritation", q: "Ljud som är väldigt irriterande", a: ["Kritor mot en tavla", "Mygga i mörkret", "Någon som smaskar", "Barnskrik", "Borrande grannar", "Snarkningar", "Larm"] },
+        { tricky: true, cat: "Hotell", q: "Saker man tar med sig från hotellrummet", a: ["Tvål", "Schampo", "Lotion", "Duschmössa", "Tofflor", "Tepåsar", "Kaffekapslar"] },
+        { tricky: true, cat: "Klibbigt", q: "Saker som är väldigt klibbiga", a: ["Sirap", "Honung", "Klister", "Kåda", "Gammalt godis", "Hårspray", "Tuggummi"] },
+        { tricky: true, cat: "Lögner", q: "Vita lögner föräldrar säger till barn", a: ["Leksaksaffären är stängd", "Det är dags att sova nu", "Tomten ser dig", "Jag har inga pengar med mig", "TV:n är trasig", "Det smakar kyckling", "Vi är framme snart"] },
+        { tricky: true, cat: "Hissen", q: "Saker man gör i en hiss", a: ["Tittar på telefonen", "Tittar på våningssiffrorna", "Undviker ögonkontakt", "Rättar till håret", "Håller andan", "Trycker på knappen", "Väntar på att få gå ur"] },
+        { tricky: true, cat: "Hemligheter", q: "Saker man ofta ljuger om", a: ["Sin vikt", "Sin ålder", "Hur mycket man tränar", "Vad saker kostade", "Att man har läst villkoren", "Att man mår bra", "Att man gillade maten"] },
+        { tricky: true, cat: "Prokrastinering", q: "Saker man alltid skjuter upp", a: ["Städning", "Disken", "Rensa förrådet", "Träning", "Ringa tandläkaren", "Deklarera", "Plugg"] },
+        { tricky: true, cat: "Nervös", q: "Saker man gör när man är nervös", a: ["Biter på naglarna", "Pillar i håret", "Skakar på benet", "Svettdroppar", "Stammar", "Gäspar", "Skrattar"] },
+        { tricky: true, cat: "Presenter", q: "Saker man låtsas bli glad över (dåliga presenter)", a: ["Strumpor", "Ett presentkort som gått ut", "En ful tröja", "Böcker man inte vill ha", "Prydnadssaker", "Billig parfym", "Ett strykjärn"] },
+        { tricky: true, cat: "Oväntat besök", q: "Saker man snabbt gömmer när gäster ringer på", a: ["Smutstvätt", "Sopor", "Odiskad disk", "Hemliga papper", "Snask/Godis", "Tidningar", "Räkningar"] },
+        { tricky: true, cat: "Solsken", q: "Saker som smälter snabbt i solen", a: ["Glass", "Snö", "Is", "Choklad", "Smör", "Stearin", "Smink"] },
+        { tricky: true, cat: "Samlare", q: "Saker man sparar men aldrig använder", a: ["Gamla kablar", "Fina papperskassar", "Kvitton", "Kartonger", "Instruktionsböcker", "Presenter man inte gillar", "Gamla telefoner"] },
+        { tricky: true, cat: "Otur", q: "Saker man av misstag tappar i sjön från bryggan", a: ["Solglasögonen", "Mobilen", "Nycklarna", "Kepsen", "Glass", "Handduken", "En sko"] },
+        { tricky: true, cat: "Kittligt", q: "Ställen på kroppen där man kan vara kittlig", a: ["Fotsulorna", "Magen", "Midjan", "Armhålorna", "Halsen", "Knävecken", "Öronen"] },
+        { tricky: true, cat: "Smärta", q: "Ord/ljud man säger när man slår i tån", a: ["Aj", "Jäklar", "Fan", "Ouch", "Satan", "Åh", "Ett vrål"] },
+        { tricky: true, cat: "Internet", q: "Saker man gör när internet ligger nere", a: ["Startar om routern", "Klagar högt", "Kollar mobildata", "Spelar dinosauriespelet", "Läser en bok", "Städar", "Sover"] },
+        { tricky: true, cat: "Omöjligt", q: "Saker som är nästan omöjliga att vika snyggt", a: ["Dra-på-lakan", "Strumpor", "Runda dukar", "Skjortor (utan träning)", "Tjocka tröjor", "En karta", "Sidenkläder"] },
+        { tricky: true, cat: "Uttråkad", q: "Saker man gör när man har jättetråkigt", a: ["Kollar kylen", "Scrollar på mobilen", "Suckar", "Tittar ut genom fönstret", "Vänder på kanaler", "Räknar saker", "Klipper naglarna"] },
+        { tricky: true, cat: "Konversation", q: "Saker man säger till sitt husdjur", a: ["Är du hungrig?", "Vem är finast?", "Ska vi gå ut?", "Nej!", "Sitt", "Vad gör du?", "Kom hit"] },
+        { tricky: true, cat: "Sökningar", q: "Saker man ofta googlar i smyg", a: ["Sjukdomssymptom", "Gamla ex", "Vad ord betyder", "Hur man kokar ägg", "Sina egna namn", "Dummaste frågorna", "Zodiaken/Horoskop"] },
+        { tricky: true, cat: "Ekonomi", q: "Saker som är extremt överprissatta", a: ["Popcorn på bio", "Vatten på flaska", "Märkeskläder", "Flygplatsmat", "Kaffe på stan", "Hotellminibar", "Bläckpatroner"] },
+        { tricky: true, cat: "Löften", q: "Saker man ofta lovar sig själv på nyår", a: ["Börja träna", "Äta nyttigare", "Sluta röka/snusa", "Spara pengar", "Stressa mindre", "Läsa fler böcker", "Vara en bättre människa"] },
+        { tricky: true, cat: "Skylla ifrån", q: "Saker man brukar skylla på hunden", a: ["Fisar", "Att mat har försvunnit", "Tuggade skor", "Hår i soffan", "Konstiga ljud", "Förstörda mattor", "Leriga golv"] },
+        { tricky: true, cat: "Sorgligt", q: "Saker som får en att gråta (inte nödvändigtvis av sorg)", a: ["Hacka lök", "En sorglig film", "Gäspa", "Kall vind i ögonen", "Skrattanfall", "Slå i tån", "En vacker låt"] },
+        { tricky: true, cat: "Flygplats", q: "Saker man gör på en flygplats", a: ["Visar passet", "Tar av sig skärpet", "Väntar", "Köper dyr mat", "Kollar på tavlan", "Letar efter sin gate", "Soversittande"] },
+        { tricky: true, cat: "Klagomål", q: "Saker svenskar alltid klagar på", a: ["Vädret", "Trafiken/Tågen", "Bensinpriset", "Politiker", "Köer", "Skatten", "Grannarna"] },
+        { tricky: true, cat: "Beroende", q: "Saker man kan vara beroende av", a: ["Kaffe", "Socker", "Mobilen", "Träning", "Snus", "Spel", "TV-serier"] },
+        { tricky: true, cat: "Mörker", q: "Saker man absolut undviker att trampa på i mörkret", a: ["Lego", "Husdjurets svans", "En pöl", "Sladdar", "Glas", "Tröskeln", "Sniglar (utomhus)"] },
+        { tricky: true, cat: "Vinst", q: "Saker man säger när man vinner i spel", a: ["Ja!", "In your face", "Äntligen", "Vem är bäst?", "Tur!", "En gång till?", "Jag visste det"] },
+        { tricky: true, cat: "Förlust", q: "Ursäkter man använder när man förlorar i spel", a: ["Jag hade otur", "Du fuskade", "Kontrollen var trasig", "Solen i ögonen", "Laggar", "Jag var inte beredd", "Jag lät dig vinna"] },
+        { tricky: true, cat: "Delning", q: "Saker man helst inte vill dela med någon", a: ["Tandborste", "Lösenord", "Underkläder", "Pin-kod", "Sitt sista godis", "Lön (belopp)", "Dagbok"] },
+        { tricky: true, cat: "Olycka", q: "Saker man försöker laga men oftast gör värre", a: ["Elektronik", "Repor på bilen", "Datorproblem", "Kläder (sy)", "Ett läckande rör", "Ett brustet hjärta", "Översaltad mat"] },
+        { tricky: true, cat: "Imponera", q: "Saker man gör på första dejten för att imponera", a: ["Bjuder på notan", "Har parfym på sig", "Skrattar åt dåliga skämt", "Har fina kläder", "Ljuger lite", "Håller upp dörren", "Äter försiktigt"] },
+        { tricky: true, cat: "Hangry", q: "Saker man gör när man är 'hangry' (hungrig+arg)", a: ["Fräser åt folk", "Suckar", "Går snabbt", "Kollar kylen 10 gånger", "Skakar", "Klagar", "Äter vad som helst"] },
+        { tricky: true, cat: "Gömställen", q: "Saker man gömmer för barnen", a: ["Lördagsgodis", "Presenterna", "Tändstickor", "Vassa knivar", "Sina egna dyra grejer", "Fjärrkontrollen", "Sanningen"] },
+        { tricky: true, cat: "Mysterium", q: "Saker som på mystiskt sätt försvinner i tvätten", a: ["Ena strumpan", "Mynt", "Färg", "Hårsnoddar", "Knappar", "Passformen", "Lappar"] },
+        { tricky: true, cat: "Sport", q: "Saker man skriker åt TV:n under en match", a: ["Skjut!", "Passa!", "Domarn är blind!", "Nej!", "Mål!", "Vad gör du?", "Byt ut honom!"] },
+        { tricky: true, cat: "Handla", q: "Saker man alltid glömmer att köpa på affären", a: ["Toalettpapper", "Mjölk", "Soppåsar", "Tandkräm", "Bakplåtspapper", "Tvättmedel", "Salt"] },
+        { tricky: true, cat: "Väskan", q: "Saker som alltid hamnar i botten av en handväska/ryggsäck", a: ["Kvitton", "Mynt", "Smulor", "Läppbalsam", "Gamla tuggummin", "Hårnålar", "Pennor"] },
+        { tricky: true, cat: "Stavning", q: "Svenska ord som är jättesvåra att stava rätt", a: ["Apropå", "Original", "Kollega", "Intervju", "Okej", "Följaktligen", "Cykla"] },
+        { tricky: true, cat: "Tystnad", q: "Saker man pratar om när det uppstår stel tystnad", a: ["Vädret", "Trafiken", "Jobbet", "Klockan", "Maten", "Veckan", "Suckar bara"] },
+        { tricky: true, cat: "Spegeln", q: "Saker man gör framför spegeln", a: ["Klämmer finnar", "Kollar tänderna", "Borstar håret", "Flexar muskler", "Grimaserar", "Sminkar sig", "Övar på att prata"] },
+        { tricky: true, cat: "Mardrömmar", q: "Vanliga saker att drömma mardrömmar om", a: ["Faller", "Blir jagad", "Tappar tänder", "Sen till prov", "Naken i skolan", "Kan inte springa", "Spindlar"] },
+        { tricky: true, cat: "Bilkö", q: "Saker man gör när man sitter fast i en bilkö", a: ["Byter radiokanal", "Pillar i näsan", "Kollar mobilen", "Trummar på ratten", "Sjunger högt", "Klagar", "Tittar på de andra förarna"] },
+        { tricky: true, cat: "Överdrift", q: "Saker man låtsas tycka om för att vara artig", a: ["Någons hemlagade mat", "En kollegas hund", "Andras semesterbilder", "Bebisar", "Ett vin man bjuds på", "Svärmor", "Att kallbada"] },
+        { tricky: true, cat: "Fusk", q: "Saker man gör i smyg på jobbet/skolan", a: ["Kollar sociala medier", "Shoppar online", "Tar längre paus", "Stjäl pennor", "Spelar spel", "Vilar ögonen", "Skickar privata mail"] },
+        { tricky: true, cat: "Slang", q: "Andra ord man använder för toalett", a: ["Dass", "Toa", "Wc", "Holken", "Badrummet", "Lilla huset", "Avträdet"] },
+        { tricky: true, cat: "Slang", q: "Andra ord man använder för pengar", a: ["Kosing", "Stålar", "Spänn", "Riksdaler", "Lax", "Gäris", "Deg"] },
+        { tricky: true, cat: "Överkonsumtion", q: "Saker man alltid råkar laga/köpa för mycket av", a: ["Pasta", "Ris", "Gröt", "Bananas", "Papper", "Julmat", "Mjölk"] },
+        { tricky: true, cat: "Mellan tänderna", q: "Saker som alltid fastnar mellan tänderna", a: ["Kött", "Popcorn", "Hallonkärnor", "Spenat", "Kolagodis", "Persilja", "Äpple"] },
+        { tricky: true, cat: "Städning", q: "Saker man hatar att behöva rengöra", a: ["Ugnen", "Toaletten", "Fläkten", "Avloppet", "Fönster", "Kattlådan", "Kylskåpet"] },
+        { tricky: true, cat: "Träning", q: "Ursäkter för att inte gå till gymmet", a: ["För trött", "Ont i halsen", "För sent", "Träningsvärk", "Soffan är för skön", "Hinner inte", "Inga rena kläder"] },
+        { tricky: true, cat: "Insomning", q: "Saker man ofta tänker på innan man somnar", a: ["Vad man ska göra imorgon", "Gamla pinsamma minnen", "Vad klockan är", "Morgondagens frukost", "Att man måste sova", "Argument man borde ha vunnit", "Ekonomi"] },
+        { tricky: true, cat: "Glömska", q: "Saker/Personer man lätt glömmer namnet på", a: ["Nya kollegor", "Grannar", "Skådespelare", "Gatunamn", "Restauranger", "Filmer", "Månader på engelska"] },
+        { tricky: true, cat: "Kassan", q: "Saker som är lite pinsamma att köpa", a: ["Toalettpapper i storpack", "Kondomer", "Hemorrojdsalva", "Bara godis en tisdag", "Graviditetstest", "Myggmedel på vintern", "Löslögonfransar"] },
+        { tricky: true, cat: "Ensamhet", q: "Saker man gör när man tror man är helt ensam", a: ["Sjunger högt", "Dansar runt", "Pratar med sig själv", "Fiser", "Kliar sig", "Gör fula miner", "Går naken"] },
+        { tricky: true, cat: "Öde ö", q: "Saker man skulle svara om man fick ta med sig 3 saker till en öde ö", a: ["En kniv", "Ett tält", "Tändstickor", "En bok", "En satellittelefon", "Vatten", "En kompis"] },
+        { tricky: true, cat: "Lotto", q: "Saker man fantiserar om att köpa om man vann miljoner", a: ["En herrgård", "En sportbil", "En resa runt jorden", "En båt", "Betala av lån", "Sommarstuga", "Privatkock"] },
+        { tricky: true, cat: "Aggression", q: "Saker man gör när man är riktigt arg", a: ["Smäller i dörrar", "Knyter nävarna", "Skriker", "Börjar gråta", "Kastar saker", "Blir tyst", "Raderar meddelanden"] },
+        { tricky: true, cat: "Lycka", q: "Saker som gör en omedelbart lycklig", a: ["Hitta pengar i jackan", "Få en kram", "Solen skiner", "Lönedag", "Lukten av kaffe", "Få en komplimang", "Att bli bjuden på något"] },
+        { tricky: true, cat: "Hushållsarbete", q: "Saker i hemmet som man hoppas att någon annan gör", a: ["Gå ut med soporna", "Tömma diskmaskinen", "Byta toarulle", "Rensa avloppet", "Tvätta", "Dammsuga", "Hämta posten"] },
+        { tricky: true, cat: "Fredag", q: "Saker man ser fram emot en fredagskväll", a: ["Tacos", "Soffan", "Bra film", "Slippa ställa klockan", "Ett glas vin/läsk", "Godis", "Att inte jobba"] },
+        { tricky: true, cat: "Föräldrar", q: "Saker tonåringar döljer för sina föräldrar", a: ["Vem de är med", "Att de röker", "Fester", "Dåliga betyg", "Vad de köper", "Att de är kära", "Skärmtiden"] },
+        { tricky: true, cat: "Överraskad", q: "Ord man skriker när man blir skrämd", a: ["Hjälp!", "Gah!", "Mamma!", "Jäklar!", "Oj!", "Shit!", "Ett konstigt pip"] },
+        { tricky: true, cat: "Ljugande", q: "Fysiska tecken på att någon ljuger", a: ["Tittar bort", "Flackar med blicken", "Blinkar mycket", "Kliar sig på näsan", "Svettas", "Skruvar på sig", "Pratar snabbt"] },
+        { tricky: true, cat: "Bråttom", q: "Saker man gör snabbt när man är sen till jobbet", a: ["Borstar tänderna i farten", "Kläderna", "Springer till bussen", "Skippar frukosten", "Kammar sig med fingrarna", "Glömmer låsa", "Svär"] },
+        { tricky: true, cat: "Oskönt", q: "Saker som är svåra att prata med en främling om", a: ["Politik", "Religion", "Inkomst", "Sjukdomar", "Kärleksliv", "Dålig andedräkt", "Derans klädsel"] },
+        { tricky: true, cat: "Trötthet", q: "Saker man gör för att hålla sig vaken på en tråkig lektion", a: ["Nyper sig själv", "Ritar i blocket", "Dricker vatten", "Kollar klockan", "Gungar på stolen", "Tittar ut genom fönstret", "Försöker blinka mycket"] },
+        { tricky: true, cat: "Sökande", q: "Saker man ofta letar efter precis innan man ska gå ut", a: ["Nycklarna", "Mobilen", "Plånboken", "Busskortet", "Vantarna", "Lipbalm", "Rätt skor"] },
+        { tricky: true, cat: "Uppmärksamhet", q: "Saker man gör för att någon ska titta på en", a: ["Harklar sig", "Skrattar högt", "Tappar något", "Viftar", "Pekar", "Ställer sig upp", "Säger 'Hallå'"] },
+        { tricky: true, cat: "Dejt", q: "Saker man är orolig för på en första dejt", a: ["Att man har mat i tänderna", "Stel tystnad", "Vem som ska betala", "Dålig andedräkt", "Att snubbla", "Att spiller", "Att man inte klickar"] },
+        { tricky: true, cat: "Ånger", q: "Saker man ofta ångrar att man sa i ilska", a: ["'Jag hatar dig'", "'Stick!'", "'Det är slut'", "Fula ord", "Avslöja en hemlighet", "En personlig förolämpning", "'Gör det själv då!'"] },
+        { tricky: true, cat: "Fickorna", q: "Saker man alltid har i jackfickan", a: ["Ludd", "Nycklar", "Ett gammalt kvitto", "Näsduk", "Mobilen", "Kalla händer", "Läppbalsam"] },
+        { tricky: true, cat: "Lukt", q: "Saker som luktar otroligt gott, men inte går att äta", a: ["Bensin", "Nyklippt gräs", "Läppbalsam", "Parfym", "Nya böcker", "Sköljmedel", "Suddgummi"] },
+        { tricky: true, cat: "Oturligt", q: "Saker som alltid är slut när man verkligen behöver det", a: ["Toalettpapper", "Batterier till fjärren", "Kaffe", "Mjölk", "Tandkräm", "Mobilsurf", "Tålamod"] },
+        { tricky: true, cat: "Magi", q: "Kända trollformler och magiska ord", a: ["Abrakadabra", "Hokus Pokus", "Simsalabim", "Avada Kedavra", "Wingardium Leviosa", "Expecto Patronum", "Sesam öppna dig"] },
+        { tricky: true, cat: "Konstigt", q: "Saker vi köper för att sedan kasta direkt", a: ["Soppåsar", "Presentpapper", "Plastfolie", "Toalettpapper", "Kaffefilter", "Tops", "Tepåsar"] },
+        { tricky: true, cat: "Tidskrävande", q: "Saker man lägger extremt mycket tid på under ett liv", a: ["Sova", "Stå i kö", "Leta efter saker", "Titta på skärmar", "Sitta i bil/buss", "Tugga", "Städa"] },
+        { tricky: true, cat: "Goda råd", q: "Klassiska råd som man får men sällan följer", a: ["Gå och lägg dig i tid", "Sitt rakt i ryggen", "Klä på dig ordentligt", "Spar en slant", "Drick mycket vatten", "Stirra inte", "Ignorera mobbarna"] },
+        { tricky: true, cat: "Sist", q: "Den absolut sista saken du kollar innan du går hemifrån", a: ["Spisen", "Låste jag dörren?", "Har jag mobilen?", "Plattången", "Vattenkranen", "Kylskåpsdörren", "Spegeln"] }
+    ];
+
     let currentCards = [];
     let currentCardIndex = 0;
     let timer;
     let timeLeft = 45;
+    let audioCtx = null;
 
     function shuffleArray(array) {
         let newArr = [...array];
@@ -238,18 +353,47 @@
         return newArr;
     }
 
+    function playSignal() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        const playTone = (freq, start, duration) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, start);
+            gain.gain.setValueAtTime(0.1, start);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(start);
+            osc.stop(start + duration);
+        };
+
+        const now = audioCtx.currentTime;
+        playTone(523.25, now, 0.4); // C5
+        playTone(659.25, now + 0.2, 0.4); // E5
+        playTone(783.99, now + 0.4, 0.6); // G5
+    }
+
     function initGame() {
+        const allCards = [...standardCards, ...trickyCards];
         currentCards = shuffleArray(allCards);
         currentCardIndex = 0;
     }
 
     function nextCard() {
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
         if (currentCards.length === 0) {
             initGame();
         }
 
         if (currentCardIndex >= currentCards.length) {
-            alert("Nu har ni spelat igenom alla 100 kort! Korten blandas nu om för en ny spelrunda.");
+            alert("Spelet är slut! Ni har kört alla 200 kort! Blandar om...");
             initGame();
         }
 
@@ -257,13 +401,18 @@
         
         const card = currentCards[currentCardIndex];
         
+        // Visa eller dölj klurighets-bannern
+        if (card.tricky) {
+            document.getElementById('tricky-banner').classList.remove('hidden');
+        } else {
+            document.getElementById('tricky-banner').classList.add('hidden');
+        }
+
         document.getElementById('category').innerText = card.cat;
         document.getElementById('question').innerText = card.q;
-        
         document.getElementById('answers').style.display = 'none';
         document.getElementById('next-btn').innerText = 'Nästa kort';
         document.getElementById('show-btn').style.display = 'inline-block';
-        
         document.getElementById('counter').innerText = `Spelade kort: ${currentCardIndex + 1} / ${currentCards.length}`;
 
         const list = document.getElementById('answer-list');
@@ -290,6 +439,7 @@
             if (timeLeft <= 0) {
                 clearInterval(timer);
                 triggerAnswers();
+                playSignal();
             }
         }, 1000);
     }
